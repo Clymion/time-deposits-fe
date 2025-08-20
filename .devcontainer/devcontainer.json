@@ -1,0 +1,27 @@
+{
+    "name": "Gemini CLI Development (DinD)",
+    "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+    "features": {},
+    "postCreateCommand": "npm install -g npm@latest @google/gemini-cli ",
+    "runArgs": [
+        "--add-host=host.docker.internal:host-gateway"
+    ],
+    "workspaceFolder": "/home/node/${localWorkspaceFolderBasename}",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/home/node/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+    "remoteUser": "node",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-vscode-remote.remote-containers",
+                "ms-vscode-remote.remote-wsl",
+                "mhutchie.git-graph",
+                "GitHub.copilot",
+                "yzhang.markdown-all-in-one",
+                "Gruntfuggly.todo-tree"
+            ],
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "bash"
+            }
+        }
+    }
+}
