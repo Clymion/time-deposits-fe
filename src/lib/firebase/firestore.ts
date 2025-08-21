@@ -6,6 +6,8 @@ import {
   addDoc,
   serverTimestamp,
   orderBy,
+  doc,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from './client';
 import { Goal } from '@/types/firestore';
@@ -27,4 +29,19 @@ export const addGoal = async (
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+};
+
+export type UpdateGoalData = Partial<Omit<Goal, 'id' | 'createdAt' | 'updatedAt' | 'stats'>>;
+
+export const updateGoal = async (userId: string, goalId: string, goalData: UpdateGoalData) => {
+  if (!userId || !goalId) throw new Error("User ID and Goal ID are required.");
+
+  const goalRef = doc(db, 'users', userId, 'goals', goalId);
+
+  const updatedData = {
+    ...goalData,
+    updatedAt: serverTimestamp(),
+  };
+
+  await updateDoc(goalRef, updatedData);
 };
