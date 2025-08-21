@@ -2,19 +2,15 @@ import { collection, getDocs, query, where, addDoc, serverTimestamp, doc, update
 import { db } from './client';
 import { Goal } from '@/types/firestore';
 
-export const getGoals = async (userId: string): Promise<Goal[]> => {
-  const goalsRef = collection(db, 'users', userId, 'goals');
+// origin/develop の簡潔な実装を採用
+export const getGoals = async (uid: string): Promise<Goal[]> => {
+  const goalsRef = collection(db, 'users', uid, 'goals');
   const q = query(goalsRef, where('isDeleted', '==', false), orderBy('sortOrder', 'asc'));
   const querySnapshot = await getDocs(q);
-  
-  const goals: Goal[] = [];
-  querySnapshot.forEach((doc) => {
-    goals.push({ id: doc.id, ...doc.data() } as Goal);
-  });
-  
-  return goals;
+  return querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }) as Goal);
 };
 
+// HEAD の具体的な実装を採用
 // Type for the data needed to create a new goal
 export type NewGoalData = Pick<Goal,
   'name' | 'description' | 'targetAmount' | 'monthlyAmount' | 'initialAmount' | 'targetType' | 'targetDate' | 'sortOrder'
@@ -43,6 +39,7 @@ export const addGoal = async (userId: string, goalData: NewGoalData) => {
   return docRef.id;
 };
 
+// origin/develop の実装を採用
 export type UpdateGoalData = Partial<Omit<Goal, 'id' | 'createdAt' | 'updatedAt' | 'stats'>>;
 
 export const updateGoal = async (userId: string, goalId: string, goalData: UpdateGoalData) => {
