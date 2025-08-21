@@ -11,9 +11,8 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Initialize Firebase
+// 初期化されていなければ初期化する
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
-const db = getFirestore(app);
 
-export { app, auth, db };
+export const auth = getAuth(app);
+export const db = getFirestore(app);

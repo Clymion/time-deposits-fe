@@ -1,10 +1,10 @@
-import { collection, getDocs, query, where, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDocs, query, where, addDoc, serverTimestamp, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { db } from './client';
 import { Goal } from '@/types/firestore';
 
 export const getGoals = async (userId: string): Promise<Goal[]> => {
   const goalsRef = collection(db, 'users', userId, 'goals');
-  const q = query(goalsRef, where('isDeleted', '==', false));
+  const q = query(goalsRef, where('isDeleted', '==', false), orderBy('sortOrder', 'asc'));
   const querySnapshot = await getDocs(q);
   
   const goals: Goal[] = [];
