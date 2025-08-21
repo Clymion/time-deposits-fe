@@ -42,3 +42,9 @@ pglite-debug.log
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# dev
+repomix-output*
+
+# firebase
+.firebase
