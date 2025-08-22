@@ -13,7 +13,7 @@ export const getGoals = async (uid: string): Promise<Goal[]> => {
 // HEAD の具体的な実装を採用
 // Type for the data needed to create a new goal
 export type NewGoalData = Pick<Goal,
-  'name' | 'description' | 'targetAmount' | 'monthlyAmount' | 'initialAmount' | 'targetType' | 'targetDate' | 'sortOrder'
+  'goalName' | 'description' | 'targetAmount' | 'monthlyAmount' | 'initialAmount' | 'targetType' | 'targetDate' | 'sortOrder'
 >;
 
 export const addGoal = async (userId: string, goalData: NewGoalData) => {

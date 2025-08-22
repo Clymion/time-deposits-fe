@@ -28,7 +28,7 @@ import { updateGoal, UpdateGoalData } from '@/lib/firebase/firestore';
 import { Goal } from '@/types/firestore';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Goal name is required.'),
+  goalName: z.string().min(1, 'Goal name is required.'),
   description: z.string().optional(),
   targetAmount: z.coerce.number().positive('Target amount must be a positive number.'),
   monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.'),
@@ -48,7 +48,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: goal.name,
+      goalName: goal.goalName,
       description: goal.description || '',
       targetAmount: goal.targetAmount,
       monthlyAmount: goal.monthlyAmount,
@@ -108,7 +108,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
             {/* Form fields are same as AddGoal, pre-filled with goal data */}
             <FormField
               control={form.control}
-              name="name"
+              name="goalName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Goal Name</FormLabel>

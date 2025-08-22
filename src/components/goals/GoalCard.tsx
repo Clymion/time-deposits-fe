@@ -55,7 +55,7 @@ export const GoalCard = ({ goal, onGoalUpdated }: GoalCardProps) => {
       <EditGoal goal={goal} onGoalUpdated={onGoalUpdated}>
         <div className="cursor-pointer flex-grow">
           <CardHeader>
-            <CardTitle>{goal.name}</CardTitle>
+            <CardTitle>{goal.goalName}</CardTitle>
             {goal.description && <CardDescription>{goal.description}</CardDescription>}
           </CardHeader>
           <CardContent>

@@ -28,7 +28,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { addGoal, NewGoalData } from '@/lib/firebase/firestore';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Goal name is required.'),
+  goalName: z.string().min(1, 'Goal name is required.'),
   description: z.string().optional(),
   targetAmount: z.coerce.number().positive('Target amount must be a positive number.'),
   initialAmount: z.coerce.number().min(0, 'Initial amount cannot be negative.').optional(),
@@ -43,7 +43,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: '',
+      goalName: '',
       description: '',
       targetAmount: undefined,
       initialAmount: 0,
@@ -115,7 +115,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="name"
+              name="goalName"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Goal Name</FormLabel>
