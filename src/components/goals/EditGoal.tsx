@@ -49,7 +49,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: goal.name,
-      description: goal.description,
+      description: goal.description || '',
       targetAmount: goal.targetAmount,
       monthlyAmount: goal.monthlyAmount,
     },
@@ -58,7 +58,30 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) return;
 
-    const goalData: UpdateGoalData = values;
+    const { targetAmount, monthlyAmount } = values;
+
+    // Recalculate targetDate based on new values
+    let targetDate: Date | null = null;
+    if (targetAmount && monthlyAmount > 0) {
+      const remainingAmount = targetAmount - goal.currentAmount;
+      if (remainingAmount > 0) {
+        const monthsNeeded = Math.ceil(remainingAmount / monthlyAmount);
+        const now = new Date();
+        targetDate = new Date(now.setMonth(now.getMonth() + monthsNeeded));
+      } else {
+        targetDate = new Date(); // Already achieved
+      }
+    }
+
+    if (!targetDate) {
+      alert("Could not calculate a target date.");
+      return;
+    }
+
+    const goalData: UpdateGoalData = {
+      ...values,
+      targetDate,
+    };
 
     try {
       await updateGoal(user.uid, goal.id, goalData);
@@ -103,7 +126,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

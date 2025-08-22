@@ -6,9 +6,10 @@ import { GoalCard } from './GoalCard';
 interface GoalListProps {
   goals: Goal[];
   loading: boolean;
+  onGoalUpdated: () => void;
 }
 
-export const GoalList = ({ goals, loading }: GoalListProps) => {
+export const GoalList = ({ goals, loading, onGoalUpdated }: GoalListProps) => {
   if (loading) {
     return <p className="text-center">Loading goals...</p>;
   }
@@ -25,7 +26,7 @@ export const GoalList = ({ goals, loading }: GoalListProps) => {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {goals.map((goal) => (
-        <GoalCard key={goal.id} goal={goal} />
+        <GoalCard key={goal.id} goal={goal} onGoalUpdated={onGoalUpdated} />
       ))}
     </div>
   );
