@@ -54,3 +54,14 @@ export const updateGoal = async (userId: string, goalId: string, goalData: Updat
 
   await updateDoc(goalRef, updatedData);
 };
+
+export const deleteGoal = async (userId: string, goalId: string) => {
+  if (!userId || !goalId) throw new Error("User ID and Goal ID are required.");
+
+  const goalRef = doc(db, 'users', userId, 'goals', goalId);
+
+  await updateDoc(goalRef, {
+    isDeleted: true,
+    updatedAt: serverTimestamp(),
+  });
+};
