@@ -45,22 +45,47 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
     defaultValues: {
       name: '',
       description: '',
+      targetAmount: undefined,
+      initialAmount: 0,
+      monthlyAmount: undefined,
     },
   });
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
-      // This should be handled by AuthGuard, but as a safeguard:
       alert('You must be logged in to add a goal.');
+      return;
+    }
+
+    const { targetAmount, initialAmount = 0, monthlyAmount } = values;
+    
+    // Calculate targetDate
+    let targetDate: Date | null = null;
+    if (targetAmount && monthlyAmount > 0) {
+      const remainingAmount = targetAmount - initialAmount;
+      if (remainingAmount > 0) {
+        const monthsNeeded = Math.ceil(remainingAmount / monthlyAmount);
+        const now = new Date();
+        targetDate = new Date(now.setMonth(now.getMonth() + monthsNeeded));
+      } else {
+        targetDate = new Date(); // Already achieved
+      }
+    }
+
+    if (!targetDate) {
+      // This case should ideally be handled by form validation
+      // but as a safeguard:
+      console.error("Could not calculate a target date.");
+      alert("Please ensure target amount and monthly savings are set correctly.");
       return;
     }
 
     const goalData: NewGoalData = {
       ...values,
-      initialAmount: values.initialAmount || 0,
-      sortOrder: 0, // Default sort order, can be changed later
-      targetType: 'duration', // Default type, can be changed later
-      targetDate: undefined, // Not handled in this form yet
+      initialAmount,
+      sortOrder: 0, // Default sort order
+      targetType: 'duration', // Default type
+      targetDate,
     };
 
     try {
