@@ -46,7 +46,7 @@ export const DeleteGoalDialog = ({ goalId, goalName, onGoalDeleted }: DeleteGoal
       alert(`Failed to delete goal: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setIsDeleting(false); // Only set deleting to false on error, to avoid flicker on success
     }
-  }, [user, goalId, goalName, onGoalDeleted]);
+  }, [user, goalId, onGoalDeleted]);
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
@@ -57,9 +57,12 @@ export const DeleteGoalDialog = ({ goalId, goalName, onGoalDeleted }: DeleteGoal
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure you want to delete "{goalName}"?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Are you sure you want to delete &ldquo;{goalName}&rdquo;?
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your goal and all associated data.
+            This action cannot be undone. This will permanently delete your goal and all associated
+            data.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

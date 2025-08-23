@@ -1,9 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { AuthGuard } from "@/components/auth/AuthGuard";
-import { GoalList } from "@/components/goals/GoalList";
-import { AddGoal } from "@/components/goals/AddGoal";
+import { AuthGuard } from '@/components/auth/AuthGuard';
+import { GoalList } from '@/components/goals/GoalList';
+import { AddGoal } from '@/components/goals/AddGoal';
 import { useAuth } from '@/contexts/AuthContext';
 import { getGoals } from '@/lib/firebase/firestore';
 import { Goal } from '@/types/firestore';
@@ -21,7 +21,7 @@ export default function Home() {
         const userGoals = await getGoals(user.uid);
         setGoals(userGoals);
       } catch (error) {
-        console.error("Error fetching goals:", error);
+        console.error('Error fetching goals:', error);
         // TODO: Set an error state to show in the UI
       } finally {
         setLoading(false);

@@ -25,19 +25,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { addGoal, NewGoalData } from '@/lib/firebase/firestore';
-
-const formSchema = z.object({
-  goalName: z.string().min(1, 'Goal name is required.'),
-  description: z.string().optional(),
-  targetAmount: z.coerce.number().positive('Target amount must be a positive number.'),
-  initialAmount: z.coerce.number().min(0, 'Initial amount cannot be negative.').optional(),
-  monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.').optional(),
-  targetMonths: z.coerce.number().positive('Target months must be a positive number.').optional(),
-}).refine(data => data.monthlyAmount || data.targetMonths, {
-  message: 'Either monthly saving or target months must be filled in.',
-  path: ['monthlyAmount'], // You can choose which field to attach the error to
-});
-
+import { Timestamp } from 'firebase/firestore';
+import { goalInputSchema } from '@/types/goal';
 
 export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
   const { state } = useAuth();
@@ -45,8 +34,8 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
   const [open, setOpen] = useState(false);
   const [lastFocused, setLastFocused] = useState<'monthly' | 'months' | null>(null);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof goalInputSchema>>({
+    resolver: zodResolver(goalInputSchema),
     defaultValues: {
       goalName: '',
       description: '',
@@ -64,10 +53,10 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
   const targetMonths = watch('targetMonths');
 
   useEffect(() => {
-    const parsedTargetAmount = parseFloat(targetAmount as any);
-    const parsedInitialAmount = parseFloat(initialAmount as any) || 0;
-    const parsedMonthlyAmount = parseFloat(monthlyAmount as any);
-    const parsedTargetMonths = parseFloat(targetMonths as any);
+    const parsedTargetAmount = parseFloat(String(targetAmount ?? ''));
+    const parsedInitialAmount = parseFloat(String(initialAmount ?? '0')) || 0;
+    const parsedMonthlyAmount = parseFloat(String(monthlyAmount ?? ''));
+    const parsedTargetMonths = parseFloat(String(targetMonths ?? ''));
 
     if (isNaN(parsedTargetAmount) || parsedTargetAmount <= 0) return;
 
@@ -79,7 +68,11 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
       if (newMonthlyAmount !== parsedMonthlyAmount) {
         setValue('monthlyAmount', newMonthlyAmount, { shouldValidate: true });
       }
-    } else if (lastFocused === 'monthly' && !isNaN(parsedMonthlyAmount) && parsedMonthlyAmount > 0) {
+    } else if (
+      lastFocused === 'monthly' &&
+      !isNaN(parsedMonthlyAmount) &&
+      parsedMonthlyAmount > 0
+    ) {
       const newTargetMonths = Math.ceil(remainingAmount / parsedMonthlyAmount);
       if (newTargetMonths !== parsedTargetMonths) {
         setValue('targetMonths', newTargetMonths, { shouldValidate: true });
@@ -87,17 +80,16 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
     }
   }, [targetAmount, initialAmount, monthlyAmount, targetMonths, lastFocused, setValue]);
 
-
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof goalInputSchema>) => {
     if (!user) {
       alert('You must be logged in to add a goal.');
       return;
     }
 
     const { targetAmount, initialAmount = 0, monthlyAmount } = values;
-    
+
     if (!monthlyAmount || monthlyAmount <= 0) {
-      alert("Monthly saving amount is invalid.");
+      alert('Monthly saving amount is invalid.');
       return;
     }
 
@@ -117,8 +109,8 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
     if (!targetDate) {
       // This case should ideally be handled by form validation
       // but as a safeguard:
-      console.error("Could not calculate a target date.");
-      alert("Please ensure target amount and monthly savings are set correctly.");
+      console.error('Could not calculate a target date.');
+      alert('Please ensure target amount and monthly savings are set correctly.');
       return;
     }
 
@@ -128,7 +120,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
       initialAmount,
       sortOrder: 0, // Default sort order
       targetType: 'duration', // Default type
-      targetDate,
+      targetDate: Timestamp.fromDate(targetDate),
     };
 
     try {
@@ -158,7 +150,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
         <DialogHeader>
           <DialogTitle>Create a New Savings Goal</DialogTitle>
           <DialogDescription>
-            What are you saving for? Let's set up a new goal.
+            What are you saving for? Let&apos;s set up a new goal.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -225,10 +217,10 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                   <FormItem>
                     <FormLabel>Monthly Saving (¥)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="10000" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="10000"
+                        {...field}
                         onFocus={() => setLastFocused('monthly')}
                       />
                     </FormControl>
@@ -243,10 +235,10 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                   <FormItem>
                     <FormLabel>Target Months</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="15" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="15"
+                        {...field}
                         onFocus={() => setLastFocused('months')}
                       />
                     </FormControl>
@@ -256,7 +248,9 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit">Create Goal</Button>
             </DialogFooter>
           </form>
