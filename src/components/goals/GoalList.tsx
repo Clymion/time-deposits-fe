@@ -18,7 +18,9 @@ export const GoalList = ({ goals, loading, onGoalUpdated }: GoalListProps) => {
     return (
       <div className="text-center py-10">
         <h3 className="text-lg font-semibold">No savings goals yet.</h3>
-                <p className="text-muted-foreground">Click the &ldquo;Add New Goal&rdquo; button to create your first one!</p>
+        <p className="text-muted-foreground">
+          Click the &ldquo;Add New Goal&rdquo; button to create your first one!
+        </p>
       </div>
     );
   }

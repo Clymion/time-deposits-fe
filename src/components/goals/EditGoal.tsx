@@ -78,7 +78,11 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
       if (newMonthlyAmount !== parsedMonthlyAmount) {
         setValue('monthlyAmount', newMonthlyAmount, { shouldValidate: true });
       }
-    } else if (lastFocused === 'monthly' && !isNaN(parsedMonthlyAmount) && parsedMonthlyAmount > 0) {
+    } else if (
+      lastFocused === 'monthly' &&
+      !isNaN(parsedMonthlyAmount) &&
+      parsedMonthlyAmount > 0
+    ) {
       const newTargetMonths = Math.ceil(remainingAmount / parsedMonthlyAmount);
       if (newTargetMonths !== parsedTargetMonths) {
         setValue('targetMonths', newTargetMonths, { shouldValidate: true });
@@ -86,14 +90,13 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
     }
   }, [targetAmount, monthlyAmount, targetMonths, goal.currentAmount, lastFocused, setValue]);
 
-
   const onSubmit = async (values: z.infer<typeof goalInputSchema>) => {
     if (!user) return;
 
     const { targetAmount, monthlyAmount } = values;
 
     if (!monthlyAmount || monthlyAmount <= 0) {
-      alert("Monthly saving amount is invalid.");
+      alert('Monthly saving amount is invalid.');
       return;
     }
 
@@ -111,7 +114,7 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
     }
 
     if (!targetDate) {
-      alert("Could not calculate a target date.");
+      alert('Could not calculate a target date.');
       return;
     }
 
@@ -136,9 +139,7 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Edit Savings Goal</DialogTitle>
-          <DialogDescription>
-            Update the details of your goal.
-          </DialogDescription>
+          <DialogDescription>Update the details of your goal.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -170,18 +171,18 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
               )}
             />
             <FormField
-                control={form.control}
-                name="targetAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Amount (¥)</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              control={form.control}
+              name="targetAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Amount (¥)</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
@@ -190,11 +191,7 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
                   <FormItem>
                     <FormLabel>Monthly Saving (¥)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        onFocus={() => setLastFocused('monthly')}
-                      />
+                      <Input type="number" {...field} onFocus={() => setLastFocused('monthly')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -207,11 +204,7 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
                   <FormItem>
                     <FormLabel>Target Months</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        {...field} 
-                        onFocus={() => setLastFocused('months')}
-                      />
+                      <Input type="number" {...field} onFocus={() => setLastFocused('months')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -219,7 +212,9 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Cancel
+              </Button>
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>

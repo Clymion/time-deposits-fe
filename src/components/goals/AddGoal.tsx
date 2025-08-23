@@ -28,7 +28,6 @@ import { addGoal, NewGoalData } from '@/lib/firebase/firestore';
 import { Timestamp } from 'firebase/firestore';
 import { goalInputSchema } from '@/types/goal';
 
-
 export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
   const { state } = useAuth();
   const { user } = state;
@@ -69,14 +68,17 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
       if (newMonthlyAmount !== parsedMonthlyAmount) {
         setValue('monthlyAmount', newMonthlyAmount, { shouldValidate: true });
       }
-    } else if (lastFocused === 'monthly' && !isNaN(parsedMonthlyAmount) && parsedMonthlyAmount > 0) {
+    } else if (
+      lastFocused === 'monthly' &&
+      !isNaN(parsedMonthlyAmount) &&
+      parsedMonthlyAmount > 0
+    ) {
       const newTargetMonths = Math.ceil(remainingAmount / parsedMonthlyAmount);
       if (newTargetMonths !== parsedTargetMonths) {
         setValue('targetMonths', newTargetMonths, { shouldValidate: true });
       }
     }
   }, [targetAmount, initialAmount, monthlyAmount, targetMonths, lastFocused, setValue]);
-
 
   const onSubmit = async (values: z.infer<typeof goalInputSchema>) => {
     if (!user) {
@@ -85,9 +87,9 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
     }
 
     const { targetAmount, initialAmount = 0, monthlyAmount } = values;
-    
+
     if (!monthlyAmount || monthlyAmount <= 0) {
-      alert("Monthly saving amount is invalid.");
+      alert('Monthly saving amount is invalid.');
       return;
     }
 
@@ -107,8 +109,8 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
     if (!targetDate) {
       // This case should ideally be handled by form validation
       // but as a safeguard:
-      console.error("Could not calculate a target date.");
-      alert("Please ensure target amount and monthly savings are set correctly.");
+      console.error('Could not calculate a target date.');
+      alert('Please ensure target amount and monthly savings are set correctly.');
       return;
     }
 
@@ -215,10 +217,10 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                   <FormItem>
                     <FormLabel>Monthly Saving (¥)</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="10000" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="10000"
+                        {...field}
                         onFocus={() => setLastFocused('monthly')}
                       />
                     </FormControl>
@@ -233,10 +235,10 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                   <FormItem>
                     <FormLabel>Target Months</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="15" 
-                        {...field} 
+                      <Input
+                        type="number"
+                        placeholder="15"
+                        {...field}
                         onFocus={() => setLastFocused('months')}
                       />
                     </FormControl>
@@ -246,7 +248,9 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
               <Button type="submit">Create Goal</Button>
             </DialogFooter>
           </form>

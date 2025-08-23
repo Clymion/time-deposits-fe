@@ -1,7 +1,14 @@
 'use client';
 
 import { Goal } from '@/types/firestore';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { EditGoal } from './EditGoal';
 import { Button } from '@/components/ui/button';
@@ -55,7 +62,7 @@ export const GoalCard = ({ goal, onGoalUpdated }: GoalCardProps) => {
 
   return (
     <>
-      <Card 
+      <Card
         className="w-full transition-all hover:shadow-md flex flex-col h-full cursor-pointer gap-3"
         onClick={() => setIsEditDialogOpen(true)}
       >
@@ -79,7 +86,11 @@ export const GoalCard = ({ goal, onGoalUpdated }: GoalCardProps) => {
           <div onClick={stopPropagation}>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive/80">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive hover:text-destructive/80"
+                >
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </AlertDialogTrigger>
@@ -87,7 +98,8 @@ export const GoalCard = ({ goal, onGoalUpdated }: GoalCardProps) => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure you want to delete this goal?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete your goal and all associated data.
+                    This action cannot be undone. This will permanently delete your goal and all
+                    associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -101,11 +113,11 @@ export const GoalCard = ({ goal, onGoalUpdated }: GoalCardProps) => {
           </div>
         </CardFooter>
       </Card>
-      <EditGoal 
-        goal={goal} 
-        open={isEditDialogOpen} 
-        onOpenChange={setIsEditDialogOpen} 
-        onGoalUpdated={onGoalUpdated} 
+      <EditGoal
+        goal={goal}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        onGoalUpdated={onGoalUpdated}
       />
     </>
   );

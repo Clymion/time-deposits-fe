@@ -57,9 +57,12 @@ export const DeleteGoalDialog = ({ goalId, goalName, onGoalDeleted }: DeleteGoal
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you sure you want to delete &ldquo;{goalName}&rdquo;?</AlertDialogTitle>
+          <AlertDialogTitle>
+            Are you sure you want to delete &ldquo;{goalName}&rdquo;?
+          </AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your goal and all associated data.
+            This action cannot be undone. This will permanently delete your goal and all associated
+            data.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
