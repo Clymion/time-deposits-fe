@@ -12,7 +12,7 @@ export interface User {
 
 export interface Goal {
   id: string;
-  name: string;
+  goalName: string;
   description?: string;
   targetAmount: number;
   monthlyAmount: number;

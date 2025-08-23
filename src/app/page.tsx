@@ -43,7 +43,7 @@ export default function Home() {
           <h2 className="text-3xl font-bold tracking-tight">Your Goals</h2>
           <AddGoal onGoalAdded={fetchGoals} />
         </div>
-        <GoalList goals={goals} loading={loading} />
+        <GoalList goals={goals} loading={loading} onGoalUpdated={fetchGoals} />
       </div>
     </AuthGuard>
   );
