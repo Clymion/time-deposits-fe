@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,13 +31,19 @@ const formSchema = z.object({
   description: z.string().optional(),
   targetAmount: z.coerce.number().positive('Target amount must be a positive number.'),
   initialAmount: z.coerce.number().min(0, 'Initial amount cannot be negative.').optional(),
-  monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.'),
+  monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.').optional(),
+  targetMonths: z.coerce.number().positive('Target months must be a positive number.').optional(),
+}).refine(data => data.monthlyAmount || data.targetMonths, {
+  message: 'Either monthly saving or target months must be filled in.',
+  path: ['monthlyAmount'], // You can choose which field to attach the error to
 });
+
 
 export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
   const { state } = useAuth();
   const { user } = state;
   const [open, setOpen] = useState(false);
+  const [lastFocused, setLastFocused] = useState<'monthly' | 'months' | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -47,8 +53,40 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
       targetAmount: undefined,
       initialAmount: 0,
       monthlyAmount: undefined,
+      targetMonths: undefined,
     },
   });
+
+  const { watch, setValue } = form;
+  const targetAmount = watch('targetAmount');
+  const initialAmount = watch('initialAmount');
+  const monthlyAmount = watch('monthlyAmount');
+  const targetMonths = watch('targetMonths');
+
+  useEffect(() => {
+    const parsedTargetAmount = parseFloat(targetAmount as any);
+    const parsedInitialAmount = parseFloat(initialAmount as any) || 0;
+    const parsedMonthlyAmount = parseFloat(monthlyAmount as any);
+    const parsedTargetMonths = parseFloat(targetMonths as any);
+
+    if (isNaN(parsedTargetAmount) || parsedTargetAmount <= 0) return;
+
+    const remainingAmount = parsedTargetAmount - parsedInitialAmount;
+    if (remainingAmount <= 0) return;
+
+    if (lastFocused === 'months' && !isNaN(parsedTargetMonths) && parsedTargetMonths > 0) {
+      const newMonthlyAmount = Math.ceil(remainingAmount / parsedTargetMonths);
+      if (newMonthlyAmount !== parsedMonthlyAmount) {
+        setValue('monthlyAmount', newMonthlyAmount, { shouldValidate: true });
+      }
+    } else if (lastFocused === 'monthly' && !isNaN(parsedMonthlyAmount) && parsedMonthlyAmount > 0) {
+      const newTargetMonths = Math.ceil(remainingAmount / parsedMonthlyAmount);
+      if (newTargetMonths !== parsedTargetMonths) {
+        setValue('targetMonths', newTargetMonths, { shouldValidate: true });
+      }
+    }
+  }, [targetAmount, initialAmount, monthlyAmount, targetMonths, lastFocused, setValue]);
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) {
@@ -58,6 +96,11 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
 
     const { targetAmount, initialAmount = 0, monthlyAmount } = values;
     
+    if (!monthlyAmount || monthlyAmount <= 0) {
+      alert("Monthly saving amount is invalid.");
+      return;
+    }
+
     // Calculate targetDate
     let targetDate: Date | null = null;
     if (targetAmount && monthlyAmount > 0) {
@@ -81,6 +124,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
 
     const goalData: NewGoalData = {
       ...values,
+      monthlyAmount,
       initialAmount,
       sortOrder: 0, // Default sort order
       targetType: 'duration', // Default type
@@ -93,8 +137,9 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
         goalName: '',
         description: '',
         targetAmount: undefined,
-        initialAmount: undefined,
+        initialAmount: 0,
         monthlyAmount: undefined,
+        targetMonths: undefined,
       });
       setOpen(false);
       onGoalAdded(); // Callback to refresh the list
@@ -172,19 +217,44 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                 )}
               />
             </div>
-            <FormField
-              control={form.control}
-              name="monthlyAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monthly Saving (¥)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="10000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="monthlyAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monthly Saving (¥)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="10000" 
+                        {...field} 
+                        onFocus={() => setLastFocused('monthly')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="targetMonths"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Months</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="15" 
+                        {...field} 
+                        onFocus={() => setLastFocused('months')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button type="submit">Create Goal</Button>

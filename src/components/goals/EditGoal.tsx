@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,7 +31,11 @@ const formSchema = z.object({
   goalName: z.string().min(1, 'Goal name is required.'),
   description: z.string().optional(),
   targetAmount: z.coerce.number().positive('Target amount must be a positive number.'),
-  monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.'),
+  monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.').optional(),
+  targetMonths: z.coerce.number().positive('Target months must be a positive number.').optional(),
+}).refine(data => data.monthlyAmount || data.targetMonths, {
+  message: 'Either monthly saving or target months must be filled in.',
+  path: ['monthlyAmount'],
 });
 
 interface EditGoalProps {
@@ -44,6 +48,14 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
   const { state } = useAuth();
   const { user } = state;
   const [open, setOpen] = useState(false);
+  const [lastFocused, setLastFocused] = useState<'monthly' | 'months' | null>(null);
+
+  const calculateInitialMonths = () => {
+    if (goal.targetAmount > goal.currentAmount && goal.monthlyAmount > 0) {
+      return Math.ceil((goal.targetAmount - goal.currentAmount) / goal.monthlyAmount);
+    }
+    return undefined;
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -52,13 +64,48 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
       description: goal.description || '',
       targetAmount: goal.targetAmount,
       monthlyAmount: goal.monthlyAmount,
+      targetMonths: calculateInitialMonths(),
     },
   });
+
+  const { watch, setValue } = form;
+  const targetAmount = watch('targetAmount');
+  const monthlyAmount = watch('monthlyAmount');
+  const targetMonths = watch('targetMonths');
+
+  useEffect(() => {
+    const parsedTargetAmount = parseFloat(targetAmount as any);
+    const parsedMonthlyAmount = parseFloat(monthlyAmount as any);
+    const parsedTargetMonths = parseFloat(targetMonths as any);
+
+    if (isNaN(parsedTargetAmount) || parsedTargetAmount <= 0) return;
+
+    const remainingAmount = parsedTargetAmount - goal.currentAmount;
+    if (remainingAmount <= 0) return;
+
+    if (lastFocused === 'months' && !isNaN(parsedTargetMonths) && parsedTargetMonths > 0) {
+      const newMonthlyAmount = Math.ceil(remainingAmount / parsedTargetMonths);
+      if (newMonthlyAmount !== parsedMonthlyAmount) {
+        setValue('monthlyAmount', newMonthlyAmount, { shouldValidate: true });
+      }
+    } else if (lastFocused === 'monthly' && !isNaN(parsedMonthlyAmount) && parsedMonthlyAmount > 0) {
+      const newTargetMonths = Math.ceil(remainingAmount / parsedMonthlyAmount);
+      if (newTargetMonths !== parsedTargetMonths) {
+        setValue('targetMonths', newTargetMonths, { shouldValidate: true });
+      }
+    }
+  }, [targetAmount, monthlyAmount, targetMonths, goal.currentAmount, lastFocused, setValue]);
+
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     if (!user) return;
 
     const { targetAmount, monthlyAmount } = values;
+
+    if (!monthlyAmount || monthlyAmount <= 0) {
+      alert("Monthly saving amount is invalid.");
+      return;
+    }
 
     // Recalculate targetDate based on new values
     let targetDate: Date | null = null;
@@ -80,6 +127,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
 
     const goalData: UpdateGoalData = {
       ...values,
+      monthlyAmount,
       targetDate,
     };
 
@@ -145,19 +193,42 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
                   </FormItem>
                 )}
               />
-            <FormField
-              control={form.control}
-              name="monthlyAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monthly Saving (¥)</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="monthlyAmount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monthly Saving (¥)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onFocus={() => setLastFocused('monthly')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="targetMonths"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Months</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        {...field} 
+                        onFocus={() => setLastFocused('months')}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
               <Button type="submit">Save Changes</Button>
