@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -26,17 +25,8 @@ import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
 import { updateGoal, UpdateGoalData } from '@/lib/firebase/firestore';
 import { Goal } from '@/types/firestore';
-
-const formSchema = z.object({
-  goalName: z.string().min(1, 'Goal name is required.'),
-  description: z.string().optional(),
-  targetAmount: z.coerce.number().positive('Target amount must be a positive number.'),
-  monthlyAmount: z.coerce.number().positive('Monthly saving must be a positive number.').optional(),
-  targetMonths: z.coerce.number().positive('Target months must be a positive number.').optional(),
-}).refine(data => data.monthlyAmount || data.targetMonths, {
-  message: 'Either monthly saving or target months must be filled in.',
-  path: ['monthlyAmount'],
-});
+import { Timestamp } from 'firebase/firestore';
+import { goalInputSchema } from '@/types/goal';
 
 interface EditGoalProps {
   goal: Goal;
@@ -57,8 +47,8 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
     return undefined;
   };
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const form = useForm<z.infer<typeof goalInputSchema>>({
+    resolver: zodResolver(goalInputSchema),
     defaultValues: {
       goalName: goal.goalName,
       description: goal.description || '',
@@ -74,9 +64,9 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
   const targetMonths = watch('targetMonths');
 
   useEffect(() => {
-    const parsedTargetAmount = parseFloat(targetAmount as any);
-    const parsedMonthlyAmount = parseFloat(monthlyAmount as any);
-    const parsedTargetMonths = parseFloat(targetMonths as any);
+    const parsedTargetAmount = parseFloat(String(targetAmount ?? ''));
+    const parsedMonthlyAmount = parseFloat(String(monthlyAmount ?? ''));
+    const parsedTargetMonths = parseFloat(String(targetMonths ?? ''));
 
     if (isNaN(parsedTargetAmount) || parsedTargetAmount <= 0) return;
 
@@ -97,7 +87,7 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
   }, [targetAmount, monthlyAmount, targetMonths, goal.currentAmount, lastFocused, setValue]);
 
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof goalInputSchema>) => {
     if (!user) return;
 
     const { targetAmount, monthlyAmount } = values;
@@ -128,7 +118,7 @@ export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalPr
     const goalData: UpdateGoalData = {
       ...values,
       monthlyAmount,
-      targetDate,
+      targetDate: targetDate ? Timestamp.fromDate(targetDate) : undefined,
     };
 
     try {

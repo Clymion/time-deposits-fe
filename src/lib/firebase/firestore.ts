@@ -1,6 +1,7 @@
 import { collection, getDocs, query, where, addDoc, serverTimestamp, doc, updateDoc, orderBy } from 'firebase/firestore';
 import { db } from './client';
 import { Goal } from '@/types/firestore';
+import { Timestamp } from 'firebase/firestore';
 
 // origin/develop の簡潔な実装を採用
 export const getGoals = async (uid: string): Promise<Goal[]> => {
@@ -31,8 +32,8 @@ export const addGoal = async (userId: string, goalData: NewGoalData) => {
       transactionCount: goalData.initialAmount > 0 ? 1 : 0,
       progress: goalData.targetAmount > 0 ? ((goalData.initialAmount || 0) / goalData.targetAmount) * 100 : 0,
     },
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
+    createdAt: Timestamp.now(),
+    updatedAt: Timestamp.now(),
   };
 
   const docRef = await addDoc(goalsRef, newGoal);
