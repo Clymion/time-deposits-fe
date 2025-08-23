@@ -12,7 +12,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -24,43 +23,54 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useAuth } from '@/contexts/AuthContext';
-import { addGoal, NewGoalData } from '@/lib/firebase/firestore';
+import { updateGoal, UpdateGoalData } from '@/lib/firebase/firestore';
+import { Goal } from '@/types/firestore';
 import { Timestamp } from 'firebase/firestore';
 import { goalInputSchema } from '@/types/goal';
 
-export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
+interface EditGoalProps {
+  goal: Goal;
+  onGoalUpdated: () => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}
+
+export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalProps) => {
   const { state } = useAuth();
   const { user } = state;
-  const [open, setOpen] = useState(false);
   const [lastFocused, setLastFocused] = useState<'monthly' | 'months' | null>(null);
+
+  const calculateInitialMonths = () => {
+    if (goal.targetAmount > goal.currentAmount && goal.monthlyAmount > 0) {
+      return Math.ceil((goal.targetAmount - goal.currentAmount) / goal.monthlyAmount);
+    }
+    return undefined;
+  };
 
   const form = useForm<z.infer<typeof goalInputSchema>>({
     resolver: zodResolver(goalInputSchema),
     defaultValues: {
-      goalName: '',
-      description: '',
-      targetAmount: undefined,
-      initialAmount: 0,
-      monthlyAmount: undefined,
-      targetMonths: undefined,
+      goalName: goal.goalName,
+      description: goal.description || '',
+      targetAmount: goal.targetAmount,
+      monthlyAmount: goal.monthlyAmount,
+      targetMonths: calculateInitialMonths(),
     },
   });
 
   const { watch, setValue } = form;
   const targetAmount = watch('targetAmount');
-  const initialAmount = watch('initialAmount');
   const monthlyAmount = watch('monthlyAmount');
   const targetMonths = watch('targetMonths');
 
   useEffect(() => {
     const parsedTargetAmount = parseFloat(String(targetAmount ?? ''));
-    const parsedInitialAmount = parseFloat(String(initialAmount ?? '0')) || 0;
     const parsedMonthlyAmount = parseFloat(String(monthlyAmount ?? ''));
     const parsedTargetMonths = parseFloat(String(targetMonths ?? ''));
 
     if (isNaN(parsedTargetAmount) || parsedTargetAmount <= 0) return;
 
-    const remainingAmount = parsedTargetAmount - parsedInitialAmount;
+    const remainingAmount = parsedTargetAmount - goal.currentAmount;
     if (remainingAmount <= 0) return;
 
     if (lastFocused === 'months' && !isNaN(parsedTargetMonths) && parsedTargetMonths > 0) {
@@ -78,25 +88,22 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
         setValue('targetMonths', newTargetMonths, { shouldValidate: true });
       }
     }
-  }, [targetAmount, initialAmount, monthlyAmount, targetMonths, lastFocused, setValue]);
+  }, [targetAmount, monthlyAmount, targetMonths, goal.currentAmount, lastFocused, setValue]);
 
   const onSubmit = async (values: z.infer<typeof goalInputSchema>) => {
-    if (!user) {
-      alert('You must be logged in to add a goal.');
-      return;
-    }
+    if (!user) return;
 
-    const { targetAmount, initialAmount = 0, monthlyAmount } = values;
+    const { targetAmount, monthlyAmount } = values;
 
     if (!monthlyAmount || monthlyAmount <= 0) {
       alert('Monthly saving amount is invalid.');
       return;
     }
 
-    // Calculate targetDate
+    // Recalculate targetDate based on new values
     let targetDate: Date | null = null;
     if (targetAmount && monthlyAmount > 0) {
-      const remainingAmount = targetAmount - initialAmount;
+      const remainingAmount = targetAmount - goal.currentAmount;
       if (remainingAmount > 0) {
         const monthsNeeded = Math.ceil(remainingAmount / monthlyAmount);
         const now = new Date();
@@ -107,54 +114,36 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
     }
 
     if (!targetDate) {
-      // This case should ideally be handled by form validation
-      // but as a safeguard:
-      console.error('Could not calculate a target date.');
-      alert('Please ensure target amount and monthly savings are set correctly.');
+      alert('Could not calculate a target date.');
       return;
     }
 
-    const goalData: NewGoalData = {
+    const goalData: UpdateGoalData = {
       ...values,
       monthlyAmount,
-      initialAmount,
-      sortOrder: 0, // Default sort order
-      targetType: 'duration', // Default type
-      targetDate: Timestamp.fromDate(targetDate),
+      targetDate: targetDate ? Timestamp.fromDate(targetDate) : undefined,
     };
 
     try {
-      await addGoal(user.uid, goalData);
-      form.reset({
-        goalName: '',
-        description: '',
-        targetAmount: undefined,
-        initialAmount: 0,
-        monthlyAmount: undefined,
-        targetMonths: undefined,
-      });
-      setOpen(false);
-      onGoalAdded(); // Callback to refresh the list
+      await updateGoal(user.uid, goal.id, goalData);
+      form.reset(values); // Reset form with new values
+      onOpenChange(false); // Close dialog
+      onGoalUpdated();
     } catch (error) {
-      console.error('Error adding goal:', error);
-      // TODO: Show user-friendly error message
+      console.error('Error updating goal:', error);
     }
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>Add New Goal</Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
-          <DialogTitle>Create a New Savings Goal</DialogTitle>
-          <DialogDescription>
-            What are you saving for? Let&apos;s set up a new goal.
-          </DialogDescription>
+          <DialogTitle>Edit Savings Goal</DialogTitle>
+          <DialogDescription>Update the details of your goal.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {/* Form fields are same as AddGoal, pre-filled with goal data */}
             <FormField
               control={form.control}
               name="goalName"
@@ -162,7 +151,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                 <FormItem>
                   <FormLabel>Goal Name</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., New Laptop, Vacation Fund" {...field} />
+                    <Input {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -175,7 +164,20 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                 <FormItem>
                   <FormLabel>Description (Optional)</FormLabel>
                   <FormControl>
-                    <Input placeholder="A short description of your goal" {...field} />
+                    <Input {...field} value={field.value || ''} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="targetAmount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Amount (¥)</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -184,45 +186,12 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="targetAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Amount (¥)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="150000" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="initialAmount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Initial Amount (¥)</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
                 name="monthlyAmount"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Monthly Saving (¥)</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="10000"
-                        {...field}
-                        onFocus={() => setLastFocused('monthly')}
-                      />
+                      <Input type="number" {...field} onFocus={() => setLastFocused('monthly')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,12 +204,7 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
                   <FormItem>
                     <FormLabel>Target Months</FormLabel>
                     <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="15"
-                        {...field}
-                        onFocus={() => setLastFocused('months')}
-                      />
+                      <Input type="number" {...field} onFocus={() => setLastFocused('months')} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -248,10 +212,10 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 Cancel
               </Button>
-              <Button type="submit">Create Goal</Button>
+              <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
         </Form>

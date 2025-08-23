@@ -2,9 +2,9 @@ import { Timestamp } from 'firebase/firestore';
 
 export interface User {
   uid: string;
-  depositDay: number;
+  depositDay: number; // 1-31 or special values for end of month
   settings: {
-    theme: 'light' | 'dark';
+    theme: 'light' | 'dark' | 'system';
     notifications: boolean;
   };
   createdAt: Timestamp;
@@ -12,13 +12,15 @@ export interface User {
 
 export interface Goal {
   id: string;
-  name: string;
+  goalName: string;
   description?: string;
   targetAmount: number;
   monthlyAmount: number;
   initialAmount: number;
   currentAmount: number;
   targetDate?: Timestamp;
+  // `duration` is not a good name, maybe `period` or `term` is better.
+  // But I will follow the design.md for now.
   targetType: 'date' | 'duration';
   sortOrder: number;
   isCompleted: boolean;
@@ -27,7 +29,7 @@ export interface Goal {
     totalDeposited: number;
     transactionCount: number;
     lastDepositDate?: Timestamp;
-    progress: number;
+    progress: number; // 0-100
   };
   createdAt: Timestamp;
   updatedAt: Timestamp;
