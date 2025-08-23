@@ -17,7 +17,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -90,7 +89,13 @@ export const AddGoal = ({ onGoalAdded }: { onGoalAdded: () => void }) => {
 
     try {
       await addGoal(user.uid, goalData);
-      form.reset();
+      form.reset({
+        goalName: '',
+        description: '',
+        targetAmount: undefined,
+        initialAmount: undefined,
+        monthlyAmount: undefined,
+      });
       setOpen(false);
       onGoalAdded(); // Callback to refresh the list
     } catch (error) {
