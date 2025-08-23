@@ -41,13 +41,13 @@ const formSchema = z.object({
 interface EditGoalProps {
   goal: Goal;
   onGoalUpdated: () => void;
-  children: React.ReactNode; // To use as a trigger
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
-export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
+export const EditGoal = ({ goal, onGoalUpdated, open, onOpenChange }: EditGoalProps) => {
   const { state } = useAuth();
   const { user } = state;
-  const [open, setOpen] = useState(false);
   const [lastFocused, setLastFocused] = useState<'monthly' | 'months' | null>(null);
 
   const calculateInitialMonths = () => {
@@ -134,7 +134,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
     try {
       await updateGoal(user.uid, goal.id, goalData);
       form.reset(values); // Reset form with new values
-      setOpen(false);
+      onOpenChange(false); // Close dialog
       onGoalUpdated();
     } catch (error) {
       console.error('Error updating goal:', error);
@@ -142,8 +142,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>{children}</DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle>Edit Savings Goal</DialogTitle>
@@ -230,7 +229,7 @@ export const EditGoal = ({ goal, onGoalUpdated, children }: EditGoalProps) => {
               />
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button type="submit">Save Changes</Button>
             </DialogFooter>
           </form>
